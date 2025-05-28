@@ -129,7 +129,8 @@ def robust_scrape(url, max_retries=3):
                 return preis, datum
         except Exception as e:
             print(f"Fehler bei Versuch {attempt + 1}: {e}")
-            time.sleep(2 ** attempt)
+            time.sleep(2 ** attempt)  # Exponentielles Backoff
+
     return None, None
 
 def speichere_tagesdaten(daten, dateipfad):
@@ -208,11 +209,10 @@ def show_price_trend(df, selected_timeframe):
         )
         
         # Update session state only if we have selected products
-if ausgewählte_produkte:
-    if set(ausgewählte_produkte) != set(st.session_state.selected_products):
-        st.session_state.selected_products = ausgewählte_produkte
-        st.rerun()
-
+        if ausgewählte_produkte:
+            if 'selected_products' not in st.session_state or ausgewählte_produkte != st.session_state.selected_products:
+                st.session_state.selected_products = ausgewählte_produkte
+                st.rerun()
 
         if ausgewählte_produkte:
             gefiltert = df[df['product'].isin(ausgewählte_produkte)]
@@ -326,11 +326,11 @@ with tab1:
         preis, datum = robust_scrape(url)
         if preis is not None:
             daten_5070ti.append({'product': name, 'price': preis, 'date': datum, 'url': url})
+        time.sleep(2)  # Pause hinzufügen
     speichere_tagesdaten(daten_5070ti, os.path.join(DATA_DIR, "preise_5070ti.json"))
     df_5070ti = lade_daten(os.path.join(DATA_DIR, "preise_5070ti.json"))
     st.dataframe(df_5070ti[['product', 'price', 'date', 'url']], use_container_width=True)
 
-# === TAB 2: 5080 Preisübersicht ===
 with tab2:
     st.header("Preisübersicht für 5080")
     daten_5080 = []
@@ -338,11 +338,13 @@ with tab2:
         preis, datum = robust_scrape(url)
         if preis is not None:
             daten_5080.append({'product': name, 'price': preis, 'date': datum, 'url': url})
+        time.sleep(2)  # Pause hinzufügen
     speichere_tagesdaten(daten_5080, os.path.join(DATA_DIR, "preise_5080.json"))
     df_5080 = lade_daten(os.path.join(DATA_DIR, "preise_5080.json"))
     st.dataframe(df_5080[['product', 'price', 'date', 'url']], use_container_width=True)
 
-# === TAB 3: Preis-Dashboard ===
+
+
 # === TAB 3: Preis-Dashboard ===
 with tab3:
     df = pd.concat([df_5070ti, df_5080], ignore_index=True)
@@ -374,7 +376,7 @@ with tab3:
                 st.rerun()
         with col2:
             if st.button("Alle RTX 5080 Modelle"):
-                st.session_state.selected_products = [p for p in df['product'].unique() if "5080" in p]
+                st.session_state.selected_products = [p for p in df['product'].unique() if isinstance(p, str) and "5080" in p]
                 st.rerun()
         with col3:
             if st.button("Auswahl zurücksetzen"):
@@ -440,7 +442,7 @@ with tab3:
             
             for produkt in st.session_state.selected_products:
                 produkt_daten = df_filtered[df_filtered['product'] == produkt]
-                if not produkt_daten.empty:  # Explizite Prüfung auf leere DataFrames
+                if not produkt_daten.empty:
                     fig.add_trace(go.Scatter(
                         x=produkt_daten['date'],
                         y=produkt_daten['price'],
