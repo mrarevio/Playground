@@ -10,3 +10,4 @@ cachetools
 fake-useragent
 selenium 
 webdriver_manager
+streamlit-aggrid
