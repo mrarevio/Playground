@@ -9,3 +9,4 @@ aiohttp
 cachetools
 fake-useragent
 selenium 
+webdriver_manager
