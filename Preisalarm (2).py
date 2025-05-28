@@ -208,10 +208,11 @@ def show_price_trend(df, selected_timeframe):
         )
         
         # Update session state only if we have selected products
-        if ausgewählte_produkte:
-            if 'selected_products' not in st.session_state or ausgewählte_produkte != st.session_state.selected_products:
-                st.session_state.selected_products = ausgewählte_produkte
-                st.rerun()
+if ausgewählte_produkte:
+    if set(ausgewählte_produkte) != set(st.session_state.selected_products):
+        st.session_state.selected_products = ausgewählte_produkte
+        st.rerun()
+
 
         if ausgewählte_produkte:
             gefiltert = df[df['product'].isin(ausgewählte_produkte)]
@@ -342,6 +343,7 @@ with tab2:
     st.dataframe(df_5080[['product', 'price', 'date', 'url']], use_container_width=True)
 
 # === TAB 3: Preis-Dashboard ===
+# === TAB 3: Preis-Dashboard ===
 with tab3:
     df = pd.concat([df_5070ti, df_5080], ignore_index=True)
     if not df.empty:
@@ -438,7 +440,7 @@ with tab3:
             
             for produkt in st.session_state.selected_products:
                 produkt_daten = df_filtered[df_filtered['product'] == produkt]
-                if not produkt_daten.empty:
+                if not produkt_daten.empty:  # Explizite Prüfung auf leere DataFrames
                     fig.add_trace(go.Scatter(
                         x=produkt_daten['date'],
                         y=produkt_daten['price'],
